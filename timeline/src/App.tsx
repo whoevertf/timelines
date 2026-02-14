@@ -1,5 +1,5 @@
 import React from "react";
-import "./app.css";
+import "./App.css";
 import { Timeline, type TimelineRow, type TimelineTask } from "./components/Timeline";
 
 function startOfDay(d: Date) {
