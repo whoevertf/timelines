@@ -663,3 +663,7 @@ body,
   touch-action: none;
   /* задача полностью управляется нами: drag/resize/long-press */
 }
+
+.timelineTaskCell {
+  touch-action: none;
+}

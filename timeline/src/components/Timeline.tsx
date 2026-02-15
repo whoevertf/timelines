@@ -163,6 +163,23 @@ export function Timeline({
             onShift(1);
         }
     };
+    const createHoldRef = React.useRef<null | {
+        timer: number;
+        pointerId: number;
+        startX: number;
+        startY: number;
+        pointerType: string;
+    }>(null);
+
+    const HOLD_MS = (pointerType: string) => (pointerType === "pen" ? 180 : 260);
+    const MOVE_TH = (pointerType: string) => (pointerType === "touch" || pointerType === "pen" ? 12 : 6);
+
+    const clearCreateHold = () => {
+        if (createHoldRef.current) {
+            window.clearTimeout(createHoldRef.current.timer);
+            createHoldRef.current = null;
+        }
+    };
 
 
     const isOnToday = isSameDay(center, today);
@@ -611,12 +628,52 @@ export function Timeline({
                                                 className={["timelineTaskCell", occupied[idx] ? "isOccupied" : ""].join(" ")}
                                                 disabled={occupied[idx]}
                                                 aria-disabled={occupied[idx]}
-                                                onClick={() => onCreateTask(row.id, startOfDay(d))}
                                                 aria-label={
                                                     occupied[idx]
                                                         ? `День занят задачей: ${d.toLocaleDateString("ru-RU")}`
-                                                        : `Создать задачу с ${d.toLocaleDateString("ru-RU")}`
+                                                        : `Создать задачу: ${d.toLocaleDateString("ru-RU")}`
                                                 }
+
+                                                // ⬇️ NEW: long-press create
+                                                onPointerDown={(e) => {
+                                                    if (occupied[idx]) return;
+
+                                                    // iPad/Safari: чтобы не было выделения/скролла
+                                                    if (e.pointerType === "touch" || e.pointerType === "pen") e.preventDefault();
+
+                                                    clearCreateHold();
+
+                                                    const timer = window.setTimeout(() => {
+                                                        // запуск создания по твоим старым правилам (в App.tsx)
+                                                        onCreateTask(row.id, startOfDay(d));
+                                                        clearCreateHold();
+                                                    }, HOLD_MS(e.pointerType));
+
+                                                    createHoldRef.current = {
+                                                        timer,
+                                                        pointerId: e.pointerId,
+                                                        startX: e.clientX,
+                                                        startY: e.clientY,
+                                                        pointerType: e.pointerType,
+                                                    };
+                                                }}
+
+                                                onPointerMove={(e) => {
+                                                    const h = createHoldRef.current;
+                                                    if (!h) return;
+                                                    if (e.pointerId !== h.pointerId) return;
+
+                                                    const dx = e.clientX - h.startX;
+                                                    const dy = e.clientY - h.startY;
+
+                                                    if (Math.abs(dx) > MOVE_TH(h.pointerType) || Math.abs(dy) > MOVE_TH(h.pointerType)) {
+                                                        clearCreateHold();
+                                                    }
+                                                }}
+
+                                                onPointerUp={() => clearCreateHold()}
+                                                onPointerCancel={() => clearCreateHold()}
+                                                onPointerLeave={() => clearCreateHold()}
                                             />
                                         ))}
                                     </div>
