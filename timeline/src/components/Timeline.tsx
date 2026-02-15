@@ -171,7 +171,8 @@ export function Timeline({
         pointerType: string;
     }>(null);
 
-    const HOLD_MS = (pointerType: string) => (pointerType === "pen" ? 180 : 260);
+    const HOLD_MS = (pointerType: string) =>
+        pointerType === "pen" ? 320 : 260;
     const MOVE_TH = (pointerType: string) => (pointerType === "touch" || pointerType === "pen" ? 12 : 6);
 
     const clearCreateHold = () => {
@@ -639,7 +640,7 @@ export function Timeline({
                                                     if (occupied[idx]) return;
 
                                                     // iPad/Safari: чтобы не было выделения/скролла
-                                                    if (e.pointerType === "touch" || e.pointerType === "pen") e.preventDefault();
+                                                    if (e.pointerType === "touch") e.preventDefault();
 
                                                     clearCreateHold();
 
@@ -666,9 +667,16 @@ export function Timeline({
                                                     const dx = e.clientX - h.startX;
                                                     const dy = e.clientY - h.startY;
 
-                                                    if (Math.abs(dx) > MOVE_TH(h.pointerType) || Math.abs(dy) > MOVE_TH(h.pointerType)) {
-                                                        clearCreateHold();
+                                                    // Pencil: НЕ отменяем long-press из-за микродвижений
+                                                    if (h.pointerType !== "pen") {
+                                                        if (
+                                                            Math.abs(dx) > MOVE_TH(h.pointerType) ||
+                                                            Math.abs(dy) > MOVE_TH(h.pointerType)
+                                                        ) {
+                                                            clearCreateHold();
+                                                        }
                                                     }
+
                                                 }}
 
                                                 onPointerUp={() => clearCreateHold()}
