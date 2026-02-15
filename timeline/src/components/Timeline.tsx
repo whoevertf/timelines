@@ -623,29 +623,21 @@ export function Timeline({
                                 >
                                     <div className="timelineCells timelineTasksBg">
                                         {days.map((d, idx) => (
-                                            <button
-                                                key={d.toISOString()}
-                                                type="button"
-                                                className={["timelineTaskCell", occupied[idx] ? "isOccupied" : ""].join(" ")}
-                                                disabled={occupied[idx]}
+                                            <div
+                                                role="button"
+                                                tabIndex={occupied[idx] ? -1 : 0}
                                                 aria-disabled={occupied[idx]}
-                                                aria-label={
-                                                    occupied[idx]
-                                                        ? `День занят задачей: ${d.toLocaleDateString("ru-RU")}`
-                                                        : `Создать задачу: ${d.toLocaleDateString("ru-RU")}`
-                                                }
+                                                className={["timelineTaskCell", occupied[idx] ? "isOccupied" : ""].join(" ")}
 
-                                                // ⬇️ NEW: long-press create
                                                 onPointerDown={(e) => {
                                                     if (occupied[idx]) return;
 
-                                                    // iPad/Safari: чтобы не было выделения/скролла
+                                                    // ❗️ВАЖНО: Pencil НЕ preventDefault
                                                     if (e.pointerType === "touch") e.preventDefault();
 
                                                     clearCreateHold();
 
                                                     const timer = window.setTimeout(() => {
-                                                        // запуск создания по твоим старым правилам (в App.tsx)
                                                         onCreateTask(row.id, startOfDay(d));
                                                         clearCreateHold();
                                                     }, HOLD_MS(e.pointerType));
@@ -661,27 +653,21 @@ export function Timeline({
 
                                                 onPointerMove={(e) => {
                                                     const h = createHoldRef.current;
-                                                    if (!h) return;
-                                                    if (e.pointerId !== h.pointerId) return;
+                                                    if (!h || e.pointerId !== h.pointerId) return;
+
+                                                    // ❗️ Pencil: НЕ отменяем по микродвижению
+                                                    if (h.pointerType === "pen") return;
 
                                                     const dx = e.clientX - h.startX;
                                                     const dy = e.clientY - h.startY;
 
-                                                    // Pencil: НЕ отменяем long-press из-за микродвижений
-                                                    if (h.pointerType !== "pen") {
-                                                        if (
-                                                            Math.abs(dx) > MOVE_TH(h.pointerType) ||
-                                                            Math.abs(dy) > MOVE_TH(h.pointerType)
-                                                        ) {
-                                                            clearCreateHold();
-                                                        }
+                                                    if (Math.abs(dx) > MOVE_TH(h.pointerType) || Math.abs(dy) > MOVE_TH(h.pointerType)) {
+                                                        clearCreateHold();
                                                     }
-
                                                 }}
-
-                                                onPointerUp={() => clearCreateHold()}
-                                                onPointerCancel={() => clearCreateHold()}
-                                                onPointerLeave={() => clearCreateHold()}
+                                                onPointerUp={clearCreateHold}
+                                                onPointerCancel={clearCreateHold}
+                                                onPointerLeave={clearCreateHold}
                                             />
                                         ))}
                                     </div>
