@@ -4,7 +4,9 @@ export type TimelineTask = {
     id: string;
     startDayKey: string; // "YYYY-MM-DD"
     lengthDays: number;  // e.g. 4 or 1-3 for fitted gaps
+    title: string;
 };
+
 
 export type TimelineRow = {
     id: string;
@@ -34,6 +36,8 @@ type TimelineProps = {
         newStartDayKey: string,
         newLengthDays: number
     ) => boolean;
+    onRenameTask: (rowId: string, taskId: string, title: string) => void;
+
 };
 
 function startOfDay(d: Date) {
@@ -98,6 +102,7 @@ export function Timeline({
     onDeleteRow,
     onMoveTask,
     onResizeTask,
+    onRenameTask,
 }: TimelineProps) {
     const total = rangeDays * 2 + 1;
 
@@ -688,7 +693,6 @@ export function Timeline({
                                                     className={["taskBlock", isDraggingThis ? "isDragging" : ""].join(" ")}
                                                     style={{ gridColumn: `${b.gridColumnStart} / span ${b.span}` }}
                                                     onPointerDown={(e) => {
-                                                        // long-press меню по прежнему доступен, если пользователь не двигает
                                                         startLongPress(row.id, b.id, e);
 
                                                         const t = row.tasks.find((x) => x.id === b.id);
@@ -697,15 +701,13 @@ export function Timeline({
                                                         const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
                                                         const x = e.clientX - rect.left;
 
-                                                        const EDGE = 10; // px — “невидимая ручка”
-
+                                                        const EDGE = 10;
                                                         const isLeftEdge = x <= EDGE;
                                                         const isRightEdge = x >= rect.width - EDGE;
 
                                                         const startIdx = toIndexFromKey(t.startDayKey);
                                                         const dayWidth = getDayWidth();
 
-                                                        // Если попали в край — начинаем resize, а не drag
                                                         if (isLeftEdge || isRightEdge) {
                                                             setResize({
                                                                 rowId: row.id,
@@ -724,7 +726,6 @@ export function Timeline({
                                                             return;
                                                         }
 
-                                                        // Иначе — обычный drag
                                                         setDrag({
                                                             taskId: b.id,
                                                             fromRowId: row.id,
@@ -741,17 +742,21 @@ export function Timeline({
                                                     }}
                                                     onPointerUp={() => {
                                                         cancelLongPress();
-                                                        // pointerup обрабатывается глобально при drag, но если drag не начался — ок
                                                     }}
                                                     onPointerCancel={() => {
                                                         cancelLongPress();
                                                         stopDrag();
                                                     }}
                                                     onPointerLeave={() => {
-                                                        // leave не отменяем drag — пользователь может тащить
                                                         cancelLongPress();
                                                     }}
-                                                />
+                                                >
+                                                    {(() => {
+                                                        const t = row.tasks.find((x) => x.id === b.id);
+                                                        return t ? <div className="taskTitle">{t.title}</div> : null;
+                                                    })()}
+                                                </div>
+
                                             );
                                         })}
                                     </div>
@@ -819,20 +824,39 @@ export function Timeline({
 
 
 
-                                    {menu && menu.rowId === row.id && (
-                                        <div className="taskMenu" style={{ left: menu.x, top: menu.y }} role="menu">
-                                            <button
-                                                type="button"
-                                                className="taskMenuBtn danger"
-                                                onClick={() => {
-                                                    onDeleteTask(menu.rowId, menu.taskId);
-                                                    closeMenu();
-                                                }}
-                                            >
-                                                Удалить задачу
-                                            </button>
-                                        </div>
-                                    )}
+                                    {menu && menu.rowId === row.id && (() => {
+                                        const task = row.tasks.find((t) => t.id === menu.taskId);
+                                        if (!task) return null;
+
+                                        return (
+                                            <div className="taskMenu" style={{ left: menu.x, top: menu.y }} role="menu">
+                                                <label className="taskMenuLabel">
+                                                    Название
+                                                    <input
+                                                        className="taskMenuInput"
+                                                        value={task.title}
+                                                        onChange={(e) => onRenameTask(menu.rowId, menu.taskId, e.target.value)}
+                                                        onPointerDown={(e) => {
+                                                            // чтобы не стартовали drag/pan и не срабатывали чужие хендлеры
+                                                            e.stopPropagation();
+                                                        }}
+                                                    />
+                                                </label>
+
+                                                <button
+                                                    type="button"
+                                                    className="taskMenuBtn danger"
+                                                    onClick={() => {
+                                                        onDeleteTask(menu.rowId, menu.taskId);
+                                                        closeMenu();
+                                                    }}
+                                                >
+                                                    Удалить задачу
+                                                </button>
+                                            </div>
+                                        );
+                                    })()}
+
                                 </div>
                             );
                         })}

@@ -360,7 +360,8 @@ body,
   grid-template-rows: 1fr;
   gap: 6px;
 
-  pointer-events: none; /* clicks go through unless taskBlock */
+  pointer-events: none;
+  /* clicks go through unless taskBlock */
 }
 
 /* task block itself */
@@ -369,26 +370,44 @@ body,
   height: 48px;
   border-radius: 10px;
 
-  background: rgba(160, 120, 255, 0.95);
-  border: 1px solid rgba(160, 120, 255, 0.95);
-  box-shadow:
-    0 10px 28px rgba(0, 0, 0, 0.28),
-    0 0 0 1px rgba(255, 255, 255, 0.10) inset;
+  background: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.85);
 
-  pointer-events: auto; /* enable drag/resize/long-press */
+  box-shadow:
+    0 8px 22px rgba(0, 0, 0, 0.35),
+    0 0 0 1px rgba(0, 0, 0, 0.06) inset;
+
+  pointer-events: auto;
   position: relative;
 
-  /* IMPORTANT: fully controlled by us (prevents Safari gestures) */
   touch-action: none;
 
   -webkit-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;
+
+  transition: transform 120ms ease, box-shadow 120ms ease;
 }
 
-/* dragging visuals */
+/* лёгкий hover только для десктопа */
+@media (hover: hover) and (pointer: fine) {
+  .taskBlock:hover {
+    transform: translateY(-1px);
+    box-shadow:
+      0 12px 28px rgba(0, 0, 0, 0.40),
+      0 0 0 1px rgba(0, 0, 0, 0.08) inset;
+  }
+}
+
+/* при drag приглушаем оригинал */
 .taskBlock.isDragging {
   opacity: 0.25;
+}
+
+/* preview остаётся контрастным */
+.taskBlock.dragPreview {
+  opacity: 1;
+  outline: 2px solid rgba(255, 255, 255, 0.35);
 }
 
 /* resize “hot zones” */
@@ -466,4 +485,44 @@ body,
     border-color: rgba(255, 120, 120, 0.45);
     background: rgba(255, 120, 120, 0.16);
   }
+}
+
+.taskTitle {
+  height: 100%;
+  padding: 10px 10px;
+  display: flex;
+  align-items: center;
+
+  /* color: #0b0d12 !important; */
+  color: #111;
+  /* тёмный текст на белом фоне */
+  font-size: 13px;
+  font-weight: 650;
+
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.taskMenuLabel {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  opacity: 0.9;
+  margin-bottom: 10px;
+}
+
+.taskMenuInput {
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: #e9eef8;
+  padding: 0 10px;
+  outline: none;
+}
+
+.taskMenuInput:focus {
+  border-color: rgba(80, 170, 255, 0.45);
+  box-shadow: 0 0 0 3px rgba(80, 170, 255, 0.18);
 }

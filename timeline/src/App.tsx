@@ -47,6 +47,8 @@ function createTaskSmart(prev: TimelineTask[], clickDate: Date): TimelineTask[] 
   const clickKey = dayKey(clickDate);
   const clickIdx = toIndex(clickKey);
 
+  const defaultTitle = "Новая задача"; // <-- заглушка
+
   const intervals = prev
     .map((t) => {
       const s = toIndex(t.startDayKey);
@@ -54,11 +56,9 @@ function createTaskSmart(prev: TimelineTask[], clickDate: Date): TimelineTask[] 
     })
     .sort((a, b) => a.s - b.s);
 
-  // click on occupied -> nothing
   const occupied = intervals.some((it) => clickIdx >= it.s && clickIdx < it.e);
   if (occupied) return prev;
 
-  // nearest left end and nearest right start
   let prevEnd: number | null = null;
   let nextStart: number | null = null;
 
@@ -70,22 +70,27 @@ function createTaskSmart(prev: TimelineTask[], clickDate: Date): TimelineTask[] 
     }
   }
 
-  // if in a 1-3 day gap between two tasks -> fill whole gap
   if (prevEnd !== null && nextStart !== null) {
     const gapLen = nextStart - prevEnd;
     if (gapLen >= 1 && gapLen <= 3 && clickIdx >= prevEnd && clickIdx < nextStart) {
-      return [...prev, { id: uid(), startDayKey: keyFromIndex(prevEnd), lengthDays: gapLen }];
+      return [
+        ...prev,
+        { id: uid(), startDayKey: keyFromIndex(prevEnd), lengthDays: gapLen, title: defaultTitle },
+      ];
     }
   }
 
-  // otherwise create maximum length up to 4, clamped by next task on the right
   const availableToRight = nextStart === null ? DEFAULT_LEN : Math.max(0, nextStart - clickIdx);
   const len = Math.min(DEFAULT_LEN, availableToRight);
 
   if (len < 1) return prev;
 
-  return [...prev, { id: uid(), startDayKey: clickKey, lengthDays: len }];
+  return [
+    ...prev,
+    { id: uid(), startDayKey: clickKey, lengthDays: len, title: defaultTitle },
+  ];
 }
+
 
 export default function App() {
   const [centerDate, setCenterDate] = React.useState<Date>(() => startOfDay(new Date()));
@@ -182,7 +187,15 @@ export default function App() {
 
               return ok;
             }}
-
+            onRenameTask={(rowId, taskId, title) => {
+              setRows((prev) =>
+                prev.map((r) =>
+                  r.id !== rowId
+                    ? r
+                    : { ...r, tasks: r.tasks.map((t) => (t.id === taskId ? { ...t, title } : t)) }
+                )
+              );
+            }}
             onMoveTask={(fromRowId, taskId, toRowId, newStartDayKey) => {
               let movedOk = false;
 
