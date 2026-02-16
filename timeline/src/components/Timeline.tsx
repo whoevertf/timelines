@@ -513,12 +513,13 @@ export function Timeline({
                 onWheel={handleWheel}
                 style={{ ["--cols" as any]: total }}
                 onPointerDown={(e) => {
-                    // включаем pan ТОЛЬКО для touch/pen, чтобы не мешать мыши/drag задач
                     if (e.pointerType !== "touch" && e.pointerType !== "pen") return;
 
-                    // важно: чтобы браузер не делал скролл страницы
-                    e.preventDefault();
+                    const target = e.target as HTMLElement | null;
+                    // если нажали по интерактивным элементам таймлайна — pan НЕ стартуем
+                    if (target?.closest(".timelineTaskCell, .taskBlock, .taskMenu")) return;
 
+                    e.preventDefault();
                     (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
                     panRef.current = {
                         active: true,
@@ -528,6 +529,7 @@ export function Timeline({
                         accumPx: 0,
                     };
                 }}
+
                 onPointerMove={(e) => {
                     const s = panRef.current;
                     if (!s || !s.active || e.pointerId !== s.pointerId) return;
@@ -632,8 +634,12 @@ export function Timeline({
                                                 onPointerDown={(e) => {
                                                     if (occupied[idx]) return;
 
-                                                    // ❗️ВАЖНО: Pencil НЕ preventDefault
-                                                    if (e.pointerType === "touch") e.preventDefault();
+                                                    // важно для iPad/Pencil: не даём браузеру жесты/скролл/selection
+                                                    e.preventDefault();
+                                                    e.stopPropagation();
+
+                                                    // чтобы UP/MOVE пришли сюда, а не улетели в strip/окно
+                                                    (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
 
                                                     clearCreateHold();
 
@@ -667,7 +673,6 @@ export function Timeline({
                                                 }}
                                                 onPointerUp={clearCreateHold}
                                                 onPointerCancel={clearCreateHold}
-                                                onPointerLeave={clearCreateHold}
                                             />
                                         ))}
                                     </div>

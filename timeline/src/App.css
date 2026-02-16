@@ -54,9 +54,13 @@ body,
   line-height: 1.4;
 }
 
+/* -------------------- Timeline wrapper -------------------- */
+
 .timeline {
   margin-top: 18px;
   user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .timelineHeader {
@@ -70,79 +74,6 @@ body,
 .timelineHint {
   font-size: 13px;
   opacity: 0.75;
-}
-
-.timelineCenterLabel {
-  font-size: 13px;
-  opacity: 0.9;
-}
-
-.timelineStrip {
-  position: relative;
-  border-radius: 16px;
-  background: rgba(0, 0, 0, 0.22);
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  padding: 14px 10px;
-
-  /* чтобы тачпад/колесо воспринимались как “управление”, а не выделение */
-  cursor: default;
-  touch-action: pan-x;
-  /* на будущее, если добавим pointer-drag */
-}
-
-.timelineCells {
-  display: grid;
-  grid-template-columns: repeat(var(--cols, 15), minmax(0, 1fr));
-  gap: 6px;
-}
-
-
-.timelineCell {
-  border-radius: 12px;
-  padding: 10px 6px;
-  text-align: center;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
-}
-
-.timelineCell:hover {
-  transform: translateY(-1px);
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.12);
-}
-
-.cellMonth {
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  opacity: 0.75;
-}
-
-.cellDay {
-  margin-top: 4px;
-  font-size: 18px;
-  font-weight: 700;
-}
-
-.timelineCell.isCenter {
-  background: rgba(255, 255, 255, 0.10);
-  border-color: rgba(255, 255, 255, 0.22);
-}
-
-.timelineCell.isToday .cellMonth {
-  opacity: 1;
-}
-
-.timelineCenterMarker {
-  position: absolute;
-  top: 10px;
-  bottom: 10px;
-  left: 50%;
-  width: 2px;
-  transform: translateX(-1px);
-  background: rgba(255, 255, 255, 0.28);
-  border-radius: 2px;
-  pointer-events: none;
 }
 
 .todayBtn {
@@ -172,7 +103,89 @@ body,
   transform: none;
 }
 
-/* Сегодняшний день — всегда выделен */
+/* -------------------- Strip + shared grid -------------------- */
+
+.timelineStrip {
+  position: relative;
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  padding: 14px 10px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  cursor: default;
+
+  /* IMPORTANT:
+     - allow vertical page scroll
+     - horizontal handled by our pointer logic
+  */
+  touch-action: pan-y;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.timelineCells {
+  display: grid;
+  grid-template-columns: repeat(var(--cols, 15), minmax(0, 1fr));
+  gap: 6px;
+}
+
+/* -------------------- Dates row -------------------- */
+
+.datesSection {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.datesGutter {
+  width: 44px;
+}
+
+.timelineDates {
+  align-items: stretch;
+}
+
+.timelineCell {
+  border-radius: 12px;
+  padding: 10px 6px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .timelineCell:hover {
+    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+}
+
+.cellMonth {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  opacity: 0.75;
+}
+
+.cellDay {
+  margin-top: 4px;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.timelineCell.isCenter {
+  background: rgba(255, 255, 255, 0.10);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+/* Today styles */
 .timelineCell.isToday {
   background: rgba(80, 170, 255, 0.16);
   border-color: rgba(80, 170, 255, 0.35);
@@ -187,7 +200,6 @@ body,
   letter-spacing: 0.02em;
 }
 
-/* Если сегодня совпадает с центром — делаем “чуть сильнее”, но без анимации */
 .timelineCell.isToday.isCenter {
   background: rgba(80, 170, 255, 0.22);
   border-color: rgba(80, 170, 255, 0.55);
@@ -196,338 +208,13 @@ body,
     0 10px 24px rgba(0, 0, 0, 0.25);
 }
 
-/* контейнер для дат и задач */
-.timelineStrip {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-/* линия с датами */
-.timelineDates {
-  align-items: stretch;
-}
-
-/* линия задач (пока пустая) */
-.timelineTasks {
-  align-items: stretch;
-}
-
-/* ячейка задачи — пустой слот под будущее */
-.timelineTaskCell {
-  height: 48px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px dashed rgba(255, 255, 255, 0.08);
-}
-
-/* контейнер теперь вертикальный: даты + задачи */
-.timelineStrip {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-/* строка задач: два слоя (фон + блоки) */
-.timelineTasksRow {
-  position: relative;
-}
-
-/* фоновые ячейки (кликабельные) */
-.timelineTasksBg {
-  position: relative;
-  z-index: 1;
-}
-
-.timelineTaskCell {
-  height: 48px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px dashed rgba(255, 255, 255, 0.10);
-  cursor: pointer;
-  padding: 0;
-}
-
-.timelineTaskCell:hover {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.18);
-}
-
-.timelineTaskCell:active {
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.timelineStrip {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.timelineTasksRow {
-  position: relative;
-}
-
-/* Background clickable cells */
-.timelineTasksBg {
-  position: relative;
-  z-index: 1;
-}
-
-.timelineTaskCell {
-  height: 48px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px dashed rgba(255, 255, 255, 0.10);
-  cursor: pointer;
-  padding: 0;
-}
-
-.timelineTaskCell:hover {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.18);
-}
-
-.timelineTaskCell:active {
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.timelineTaskCell.isOccupied,
-.timelineTaskCell:disabled {
-  cursor: default;
-  opacity: 0.45;
-  border-style: solid;
-  border-color: rgba(255, 255, 255, 0.06);
-  background: rgba(255, 255, 255, 0.02);
-}
-
-.timelineTaskCell:disabled:hover {
-  background: rgba(255, 255, 255, 0.02);
-  border-color: rgba(255, 255, 255, 0.06);
-}
-
-/* Overlay blocks */
-.timelineTasksBlocks {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  pointer-events: none;
-
-  display: grid;
-  grid-template-columns: repeat(var(--cols, 15), minmax(0, 1fr));
-  gap: 6px;
-  grid-template-rows: 1fr;
-}
-
-.taskBlock {
-  height: 48px;
-  border-radius: 10px;
-  background: rgba(160, 120, 255, 0.95);
-  border: 1px solid rgba(160, 120, 255, 0.95);
-  box-shadow:
-    0 10px 28px rgba(0, 0, 0, 0.28),
-    0 0 0 1px rgba(255, 255, 255, 0.10) inset;
-  pointer-events: auto;
-  /* ВАЖНО: только задача ловит события */
-  grid-row: 1;
-  touch-action: manipulation;
-}
-
-.taskMenu {
-  position: absolute;
-  z-index: 5;
-  min-width: 180px;
-  padding: 8px;
-  border-radius: 12px;
-
-  background: rgba(20, 22, 30, 0.96);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.5);
-
-  /* небольшая “подсказка”, что это справа */
-  transform: translateY(-2px);
-}
-
-.taskMenuBtn {
-  width: 100%;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.06);
-  color: #e9eef8;
-  border-radius: 10px;
-  padding: 10px 12px;
-  font-size: 13px;
-  cursor: pointer;
-}
-
-.taskMenuBtn:hover {
-  background: rgba(255, 255, 255, 0.10);
-  border-color: rgba(255, 255, 255, 0.20);
-}
-
-.taskMenuBtn.danger {
-  border-color: rgba(255, 120, 120, 0.28);
-  background: rgba(255, 120, 120, 0.10);
-}
-
-.taskMenuBtn.danger:hover {
-  border-color: rgba(255, 120, 120, 0.45);
-  background: rgba(255, 120, 120, 0.16);
-}
+/* -------------------- Tasks section layout -------------------- */
 
 .tasksSection {
   display: grid;
   grid-template-columns: 44px 1fr;
   gap: 10px;
   align-items: start;
-}
-
-.tasksGutter {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding-top: 0;
-}
-
-.addRowBtn {
-  height: 48px;
-  width: 44px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(255, 255, 255, 0.06);
-  color: #e9eef8;
-  font-size: 22px;
-  line-height: 1;
-  cursor: pointer;
-  transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
-}
-
-.addRowBtn:hover {
-  transform: translateY(-1px);
-  background: rgba(255, 255, 255, 0.10);
-  border-color: rgba(255, 255, 255, 0.22);
-}
-
-.addRowBtn:active {
-  transform: translateY(0);
-}
-
-.rowGutter {
-  height: 48px;
-  width: 44px;
-}
-
-
-.tasksRows {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.timelineTasksRow {
-  position: relative;
-}
-
-.timelineTasksBg {
-  position: relative;
-  z-index: 1;
-}
-
-.timelineTaskCell {
-  height: 48px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px dashed rgba(255, 255, 255, 0.10);
-  cursor: pointer;
-  padding: 0;
-}
-
-.timelineTaskCell:hover {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.18);
-}
-
-.timelineTaskCell:active {
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.timelineTaskCell.isOccupied,
-.timelineTaskCell:disabled {
-  cursor: default;
-  opacity: 0.45;
-  border-style: solid;
-  border-color: rgba(255, 255, 255, 0.06);
-  background: rgba(255, 255, 255, 0.02);
-}
-
-.timelineTaskCell:disabled:hover {
-  background: rgba(255, 255, 255, 0.02);
-  border-color: rgba(255, 255, 255, 0.06);
-}
-
-/* overlay blocks */
-.timelineTasksBlocks {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-
-  pointer-events: none;
-  /* clicks go to cells, except taskBlock */
-  display: grid;
-  grid-template-columns: repeat(var(--cols, 15), minmax(0, 1fr));
-  grid-template-rows: 1fr;
-  gap: 6px;
-}
-
-.taskBlock {
-  pointer-events: auto;
-  /* enable long-press */
-  grid-row: 1;
-  height: 48px;
-  border-radius: 10px;
-  background: rgba(160, 120, 255, 0.95);
-  border: 1px solid rgba(160, 120, 255, 0.95);
-  box-shadow:
-    0 10px 28px rgba(0, 0, 0, 0.28),
-    0 0 0 1px rgba(255, 255, 255, 0.10) inset;
-  touch-action: manipulation;
-}
-
-/* popover */
-.taskMenu {
-  position: absolute;
-  z-index: 5;
-  min-width: 180px;
-  padding: 8px;
-  border-radius: 12px;
-
-  background: rgba(20, 22, 30, 0.96);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.5);
-}
-
-.taskMenuBtn {
-  width: 100%;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.06);
-  color: #e9eef8;
-  border-radius: 10px;
-  padding: 10px 12px;
-  font-size: 13px;
-  cursor: pointer;
-}
-
-.taskMenuBtn:hover {
-  background: rgba(255, 255, 255, 0.10);
-  border-color: rgba(255, 255, 255, 0.20);
-}
-
-.taskMenuBtn.danger {
-  border-color: rgba(255, 120, 120, 0.28);
-  background: rgba(255, 120, 120, 0.10);
-}
-
-.taskMenuBtn.danger:hover {
-  border-color: rgba(255, 120, 120, 0.45);
-  background: rgba(255, 120, 120, 0.16);
 }
 
 .tasksGutter {
@@ -544,13 +231,38 @@ body,
   place-items: center;
 }
 
-/* чтобы у рядов кроме первого был такой же размер слота, без кнопки + */
 .rowGutterSpacer {
   height: 48px;
   width: 44px;
 }
 
-/* кнопка удаления: скрыта по умолчанию */
+.addRowBtn {
+  height: 48px;
+  width: 44px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: #e9eef8;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
+  position: relative;
+  z-index: 2;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .addRowBtn:hover {
+    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.10);
+    border-color: rgba(255, 255, 255, 0.22);
+  }
+}
+
+.addRowBtn:active {
+  transform: translateY(0);
+}
+
 .deleteRowBtn {
   position: absolute;
   inset: 0;
@@ -570,57 +282,125 @@ body,
   transition: opacity 120ms ease, transform 120ms ease, background 120ms ease, border-color 120ms ease;
 }
 
-/* появление по наведению именно на левую зону ряда */
-.rowGutterCell:hover .deleteRowBtn {
-  opacity: 1;
-  pointer-events: auto;
-  transform: scale(1);
+/* показываем "-" только на десктопе по hover */
+@media (hover: hover) and (pointer: fine) {
+  .rowGutterCell:hover .deleteRowBtn {
+    opacity: 1;
+    pointer-events: auto;
+    transform: scale(1);
+  }
+
+  .deleteRowBtn:hover {
+    background: rgba(255, 120, 120, 0.14);
+    border-color: rgba(255, 120, 120, 0.40);
+  }
 }
 
-.deleteRowBtn:hover {
-  background: rgba(255, 120, 120, 0.14);
-  border-color: rgba(255, 120, 120, 0.40);
+/* на touch-устройствах можно оставить кнопку всегда доступной */
+@media (hover: none) and (pointer: coarse) {
+  .deleteRowBtn {
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
+  }
 }
 
-/* важно: чтобы + оставался видимым и кликабельным */
-.addRowBtn {
+.tasksRows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* -------------------- Per row: background cells + overlay blocks -------------------- */
+
+.timelineTasksRow {
   position: relative;
-  z-index: 2;
 }
 
-.taskBlock.isDragging {
-  opacity: 0.25;
-  /* оригинал приглушаем */
+/* background layer (click / long-press create) */
+.timelineTasksBg {
+  position: relative;
+  z-index: 1;
 }
 
-.dragPreviewLayer {
+.timelineTaskCell {
+  height: 48px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed rgba(255, 255, 255, 0.10);
+  cursor: pointer;
+  padding: 0;
+
+  /* IMPORTANT: gestures handled by pointer events */
+  touch-action: none;
+
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .timelineTaskCell:hover {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.18);
+  }
+}
+
+.timelineTaskCell:active {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.timelineTaskCell.isOccupied {
+  cursor: default;
+  opacity: 0.45;
+  border-style: solid;
+  border-color: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* overlay layer with tasks */
+.timelineTasksBlocks {
   position: absolute;
   inset: 0;
-  z-index: 4;
-  pointer-events: none;
-}
+  z-index: 2;
 
-.taskBlock.dragPreview {
-  opacity: 1;
-  outline: 2px solid rgba(255, 255, 255, 0.20);
-}
-
-.datesSection {
   display: grid;
-  grid-template-columns: 44px 1fr;
-  gap: 10px;
-  align-items: stretch;
+  grid-template-columns: repeat(var(--cols, 15), minmax(0, 1fr));
+  grid-template-rows: 1fr;
+  gap: 6px;
+
+  pointer-events: none; /* clicks go through unless taskBlock */
 }
 
-.datesGutter {
-  width: 44px;
-}
-
+/* task block itself */
 .taskBlock {
+  grid-row: 1;
+  height: 48px;
+  border-radius: 10px;
+
+  background: rgba(160, 120, 255, 0.95);
+  border: 1px solid rgba(160, 120, 255, 0.95);
+  box-shadow:
+    0 10px 28px rgba(0, 0, 0, 0.28),
+    0 0 0 1px rgba(255, 255, 255, 0.10) inset;
+
+  pointer-events: auto; /* enable drag/resize/long-press */
   position: relative;
+
+  /* IMPORTANT: fully controlled by us (prevents Safari gestures) */
+  touch-action: none;
+
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
-/* невидимые зоны по краям для UX: курсор меняется */
+/* dragging visuals */
+.taskBlock.isDragging {
+  opacity: 0.25;
+}
+
+/* resize “hot zones” */
 .taskBlock::before,
 .taskBlock::after {
   content: "";
@@ -640,30 +420,59 @@ body,
   cursor: ew-resize;
 }
 
-/* iOS Safari: меньше конфликтов со скроллом/выделением */
-.timelineStrip {
-  touch-action: pan-y;
-  /* разрешаем вертикальный скролл страницы, но горизонталь берём на себя */
-  -webkit-user-select: none;
-  user-select: none;
-  -webkit-touch-callout: none;
+/* drag preview layer */
+.dragPreviewLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
 }
 
-.timelineTasksRow,
-.timelineCells,
-.timelineTaskCell,
-.taskBlock {
-  -webkit-user-select: none;
-  user-select: none;
-  -webkit-touch-callout: none;
+.taskBlock.dragPreview {
+  opacity: 1;
+  outline: 2px solid rgba(255, 255, 255, 0.20);
 }
 
-/* чтобы перетаскивание задач/ресайз на iPad было стабильнее */
-.taskBlock {
-  touch-action: none;
-  /* задача полностью управляется нами: drag/resize/long-press */
+/* -------------------- Task menu popover -------------------- */
+
+.taskMenu {
+  position: absolute;
+  z-index: 5;
+  min-width: 180px;
+  padding: 8px;
+  border-radius: 12px;
+
+  background: rgba(20, 22, 30, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.5);
 }
 
-.timelineTaskCell {
-  touch-action: none;
+.taskMenuBtn {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: #e9eef8;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .taskMenuBtn:hover {
+    background: rgba(255, 255, 255, 0.10);
+    border-color: rgba(255, 255, 255, 0.20);
+  }
+}
+
+.taskMenuBtn.danger {
+  border-color: rgba(255, 120, 120, 0.28);
+  background: rgba(255, 120, 120, 0.10);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .taskMenuBtn.danger:hover {
+    border-color: rgba(255, 120, 120, 0.45);
+    background: rgba(255, 120, 120, 0.16);
+  }
 }
