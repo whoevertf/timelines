@@ -405,10 +405,10 @@ body,
 }
 
 /* preview остаётся контрастным */
-.taskBlock.dragPreview {
+/* .taskBlock.dragPreview {
   opacity: 1;
   outline: 2px solid rgba(255, 255, 255, 0.35);
-}
+} */
 
 /* resize “hot zones” */
 .taskBlock::before,

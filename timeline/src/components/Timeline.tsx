@@ -785,7 +785,11 @@ export function Timeline({
                                         return (
                                             <div className="timelineTasksBlocks dragPreviewLayer" aria-hidden="true">
                                                 <div
-                                                    className="taskBlock dragPreview"
+                                                    className={[
+                                                        "taskBlock",
+                                                        task ? `status-${task.status}` : "",
+                                                        "dragPreview",
+                                                    ].join(" ")}
                                                     style={{ gridColumn: `${gridColumnStart} / span ${span}` }}
                                                 />
                                             </div>
@@ -817,10 +821,15 @@ export function Timeline({
                                         return (
                                             <div className="timelineTasksBlocks dragPreviewLayer" aria-hidden="true">
                                                 <div
-                                                    className="taskBlock dragPreview"
+                                                    className={[
+                                                        "taskBlock",
+                                                        task ? `status-${task.status}` : "",
+                                                        "dragPreview",
+                                                    ].join(" ")}
                                                     style={{ gridColumn: `${gridColumnStart} / span ${span}` }}
                                                 />
                                             </div>
+
                                         );
                                     })()}
 
