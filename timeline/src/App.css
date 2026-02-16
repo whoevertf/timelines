@@ -282,7 +282,7 @@ body,
   transition: opacity 120ms ease, transform 120ms ease, background 120ms ease, border-color 120ms ease;
 }
 
-/* показываем "-" только на десктопе по hover */
+/* показываем только при наведении (и мышь/трекпад, и Pencil hover тоже считается hover) */
 @media (hover: hover) and (pointer: fine) {
   .rowGutterCell:hover .deleteRowBtn {
     opacity: 1;
@@ -293,15 +293,6 @@ body,
   .deleteRowBtn:hover {
     background: rgba(255, 120, 120, 0.14);
     border-color: rgba(255, 120, 120, 0.40);
-  }
-}
-
-/* на touch-устройствах можно оставить кнопку всегда доступной */
-@media (hover: none) and (pointer: coarse) {
-  .deleteRowBtn {
-    opacity: 1;
-    pointer-events: auto;
-    transform: none;
   }
 }
 
