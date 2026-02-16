@@ -1,6 +1,6 @@
 import React from "react";
 import "./App.css";
-import { Timeline, type TimelineRow, type TimelineTask } from "./components/Timeline";
+import { Timeline, type TimelineRow, type TimelineTask, type TaskStatus } from "./components/Timeline";
 
 function startOfDay(d: Date) {
   const x = new Date(d);
@@ -43,6 +43,7 @@ function uid() {
 
 // smart create inside ONE row
 function createTaskSmart(prev: TimelineTask[], clickDate: Date): TimelineTask[] {
+  const defaultStatus: TaskStatus = "todo";
   const DEFAULT_LEN = 4;
   const clickKey = dayKey(clickDate);
   const clickIdx = toIndex(clickKey);
@@ -75,7 +76,7 @@ function createTaskSmart(prev: TimelineTask[], clickDate: Date): TimelineTask[] 
     if (gapLen >= 1 && gapLen <= 3 && clickIdx >= prevEnd && clickIdx < nextStart) {
       return [
         ...prev,
-        { id: uid(), startDayKey: keyFromIndex(prevEnd), lengthDays: gapLen, title: defaultTitle },
+        { id: uid(), startDayKey: keyFromIndex(prevEnd), lengthDays: gapLen, title: defaultTitle, status: defaultStatus, },
       ];
     }
   }
@@ -87,7 +88,7 @@ function createTaskSmart(prev: TimelineTask[], clickDate: Date): TimelineTask[] 
 
   return [
     ...prev,
-    { id: uid(), startDayKey: clickKey, lengthDays: len, title: defaultTitle },
+    { id: uid(), startDayKey: clickKey, lengthDays: len, title: defaultTitle, status: defaultStatus, },
   ];
 }
 
@@ -109,10 +110,6 @@ export default function App() {
       <main className="centerWrap">
         <section className="bigBlock" aria-label="Timeline workspace">
           <h1 className="title">Timeline</h1>
-          <p className="subtitle">
-            Свайпай по тачпаду. «+» слева добавляет новый ряд. Long-press по задаче — меню справа.
-          </p>
-
           <Timeline
             centerDate={centerDate}
             rangeDays={7}
@@ -186,6 +183,20 @@ export default function App() {
               });
 
               return ok;
+            }}
+            onChangeStatus={(rowId, taskId, status) => {
+              setRows((prev) =>
+                prev.map((r) =>
+                  r.id !== rowId
+                    ? r
+                    : {
+                      ...r,
+                      tasks: r.tasks.map((t) =>
+                        t.id === taskId ? { ...t, status } : t
+                      ),
+                    }
+                )
+              );
             }}
             onRenameTask={(rowId, taskId, title) => {
               setRows((prev) =>

@@ -1,10 +1,13 @@
 import React from "react";
 
+export type TaskStatus = "todo" | "inprogress" | "done";
+
 export type TimelineTask = {
     id: string;
     startDayKey: string; // "YYYY-MM-DD"
     lengthDays: number;  // e.g. 4 or 1-3 for fitted gaps
     title: string;
+    status: TaskStatus;
 };
 
 
@@ -37,7 +40,11 @@ type TimelineProps = {
         newLengthDays: number
     ) => boolean;
     onRenameTask: (rowId: string, taskId: string, title: string) => void;
-
+    onChangeStatus: (
+        rowId: string,
+        taskId: string,
+        status: TaskStatus
+    ) => void;
 };
 
 function startOfDay(d: Date) {
@@ -103,6 +110,7 @@ export function Timeline({
     onMoveTask,
     onResizeTask,
     onRenameTask,
+    onChangeStatus,
 }: TimelineProps) {
     const total = rangeDays * 2 + 1;
 
@@ -203,9 +211,6 @@ export function Timeline({
         const onDown = (e: MouseEvent) => {
             const target = e.target as HTMLElement | null;
             if (!target) return;
-            if (target.closest(".taskMenu")) return;
-            if (target.closest(".taskBlock")) return;
-            closeMenu();
         };
 
         window.addEventListener("keydown", onKey);
@@ -227,20 +232,22 @@ export function Timeline({
         if (pressTimerRef.current) window.clearTimeout(pressTimerRef.current);
 
         const el = e.currentTarget;
-        pressTimerRef.current = window.setTimeout(() => {
-            const rowEl = el.closest(".timelineTasksRow") as HTMLElement | null;
-            if (!rowEl) return;
 
-            const rowRect = rowEl.getBoundingClientRect();
+        pressTimerRef.current = window.setTimeout(() => {
+            const stripEl = stripRef.current; // ✅ позиционируем относительно strip
+            if (!stripEl) return;
+
+            const stripRect = stripEl.getBoundingClientRect();
             const rect = el.getBoundingClientRect();
 
             // menu to the right of task block
-            const x = rect.right - rowRect.left + 10;
-            const y = rect.top - rowRect.top;
+            const x = rect.right - stripRect.left + 10;
+            const y = rect.top - stripRect.top;
 
             setMenu({ rowId, taskId, x, y });
         }, 450);
     };
+
 
     const cancelLongPress = () => {
         if (pressTimerRef.current) {
@@ -497,8 +504,6 @@ export function Timeline({
     return (
         <div className="timeline" aria-label="Timeline">
             <div className="timelineHeader">
-                <span className="timelineHint">Свайпай по тачпаду влево/вправо</span>
-
                 <button
                     type="button"
                     className="todayBtn"
@@ -559,6 +564,7 @@ export function Timeline({
                     if (!s || e.pointerId !== s.pointerId) return;
                     panRef.current = null;
                 }}
+
             >
                 {/* Dates row */}
                 <div className="datesSection">
@@ -684,19 +690,22 @@ export function Timeline({
 
                                     <div className="timelineTasksBlocks" aria-hidden="true">
                                         {blocks.map((b) => {
-                                            const isDraggingThis =
-                                                drag && drag.taskId === b.id && drag.fromRowId === row.id;
+                                            const task = row.tasks.find((x) => x.id === b.id);
+                                            const isDraggingThis = drag && drag.taskId === b.id && drag.fromRowId === row.id;
 
                                             return (
                                                 <div
                                                     key={b.id}
-                                                    className={["taskBlock", isDraggingThis ? "isDragging" : ""].join(" ")}
+                                                    className={[
+                                                        "taskBlock",
+                                                        task ? `status-${task.status}` : "",
+                                                        isDraggingThis ? "isDragging" : "",
+                                                    ].join(" ")}
                                                     style={{ gridColumn: `${b.gridColumnStart} / span ${b.span}` }}
                                                     onPointerDown={(e) => {
                                                         startLongPress(row.id, b.id, e);
 
-                                                        const t = row.tasks.find((x) => x.id === b.id);
-                                                        if (!t) return;
+                                                        if (!task) return;
 
                                                         const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
                                                         const x = e.clientX - rect.left;
@@ -705,7 +714,7 @@ export function Timeline({
                                                         const isLeftEdge = x <= EDGE;
                                                         const isRightEdge = x >= rect.width - EDGE;
 
-                                                        const startIdx = toIndexFromKey(t.startDayKey);
+                                                        const startIdx = toIndexFromKey(task.startDayKey);
                                                         const dayWidth = getDayWidth();
 
                                                         if (isLeftEdge || isRightEdge) {
@@ -717,9 +726,9 @@ export function Timeline({
                                                                 startClientX: e.clientX,
                                                                 dayWidth,
                                                                 origStartIdx: startIdx,
-                                                                origLen: t.lengthDays,
+                                                                origLen: task.lengthDays,
                                                                 previewStartIdx: startIdx,
-                                                                previewLen: t.lengthDays,
+                                                                previewLen: task.lengthDays,
                                                                 moved: false,
                                                                 pointerType: e.pointerType,
                                                             });
@@ -740,25 +749,18 @@ export function Timeline({
                                                             pointerType: e.pointerType,
                                                         });
                                                     }}
-                                                    onPointerUp={() => {
-                                                        cancelLongPress();
-                                                    }}
+                                                    onPointerUp={() => cancelLongPress()}
                                                     onPointerCancel={() => {
                                                         cancelLongPress();
                                                         stopDrag();
                                                     }}
-                                                    onPointerLeave={() => {
-                                                        cancelLongPress();
-                                                    }}
+                                                    onPointerLeave={() => cancelLongPress()}
                                                 >
-                                                    {(() => {
-                                                        const t = row.tasks.find((x) => x.id === b.id);
-                                                        return t ? <div className="taskTitle">{t.title}</div> : null;
-                                                    })()}
+                                                    {task && <div className="taskTitle">{task.title}</div>}
                                                 </div>
-
                                             );
                                         })}
+
                                     </div>
                                     {resize && resize.moved && resize.rowId === row.id && (() => {
                                         const task = rows
@@ -822,46 +824,83 @@ export function Timeline({
                                         );
                                     })()}
 
-
-
-                                    {menu && menu.rowId === row.id && (() => {
-                                        const task = row.tasks.find((t) => t.id === menu.taskId);
-                                        if (!task) return null;
-
-                                        return (
-                                            <div className="taskMenu" style={{ left: menu.x, top: menu.y }} role="menu">
-                                                <label className="taskMenuLabel">
-                                                    Название
-                                                    <input
-                                                        className="taskMenuInput"
-                                                        value={task.title}
-                                                        onChange={(e) => onRenameTask(menu.rowId, menu.taskId, e.target.value)}
-                                                        onPointerDown={(e) => {
-                                                            // чтобы не стартовали drag/pan и не срабатывали чужие хендлеры
-                                                            e.stopPropagation();
-                                                        }}
-                                                    />
-                                                </label>
-
-                                                <button
-                                                    type="button"
-                                                    className="taskMenuBtn danger"
-                                                    onClick={() => {
-                                                        onDeleteTask(menu.rowId, menu.taskId);
-                                                        closeMenu();
-                                                    }}
-                                                >
-                                                    Удалить задачу
-                                                </button>
-                                            </div>
-                                        );
-                                    })()}
-
                                 </div>
                             );
                         })}
                     </div>
                 </div>
+                {menu && (
+                    <>
+                        {/* Backdrop на весь strip: блокирует клики и закрывает меню */}
+                        <div
+                            className="taskMenuBackdrop"
+                            onPointerDown={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                closeMenu();
+                            }}
+                        />
+
+                        {/* Само меню */}
+                        <div
+                            className="taskMenu"
+                            style={{ left: menu.x, top: menu.y }}
+                            role="menu"
+                            onPointerDown={(e) => e.stopPropagation()}
+                        >
+                            {(() => {
+                                const row = rows.find((r) => r.id === menu.rowId);
+                                const task = row?.tasks.find((t) => t.id === menu.taskId);
+                                if (!task) return null;
+
+                                return (
+                                    <>
+                                        {/* Название */}
+                                        <label className="taskMenuLabel">
+                                            Название
+                                            <input
+                                                className="taskMenuInput"
+                                                value={task.title}
+                                                onChange={(e) => onRenameTask(menu.rowId, menu.taskId, e.target.value)}
+                                                onPointerDown={(e) => e.stopPropagation()}
+                                            />
+                                        </label>
+
+                                        {/* Статус */}
+                                        <div className="taskStatusSection">
+                                            <div className="taskStatusLabel">Статус</div>
+
+                                            <div className="taskStatusOptions">
+                                                {(["todo", "inprogress", "done"] as const).map((s) => (
+                                                    <button
+                                                        key={s}
+                                                        type="button"
+                                                        className={["taskStatusBtn", task.status === s ? "active" : ""].join(" ")}
+                                                        onClick={() => onChangeStatus(menu.rowId, menu.taskId, s)}
+                                                    >
+                                                        {s === "todo" ? "To-do" : s === "inprogress" ? "In progress" : "Done"}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Удалить */}
+                                        <button
+                                            type="button"
+                                            className="taskMenuBtn danger"
+                                            onClick={() => {
+                                                onDeleteTask(menu.rowId, menu.taskId);
+                                                closeMenu();
+                                            }}
+                                        >
+                                            Удалить задачу
+                                        </button>
+                                    </>
+                                );
+                            })()}
+                        </div>
+                    </>
+                )}
             </div>
         </div>
     );
